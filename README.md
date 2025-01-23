@@ -1,4 +1,4 @@
-# MelodyT5: A Unified Score-to-Score Transformer for Symbolic Music Processing [ISMIR 2024]
+# MelodyT5: A Unified Score-to-Score Transformer for Symbolic Music Processing
 
 This repository contains the code for the MelodyT5 model as described in the paper [MelodyT5: A Unified Score-to-Score Transformer for Symbolic Music Processing](https://arxiv.org/abs/2407.02277).
 
