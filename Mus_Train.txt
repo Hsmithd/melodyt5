@@ -1,0 +1,3 @@
+Single-CPU mode
+Error loading 'random_model': Error no file named pytorch_model.bin, tf_model.h5, model.ckpt.index or flax_model.msgpack found in directory random_model.
+Please run 'random_model.py' to create randomly initialized weights.

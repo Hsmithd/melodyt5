@@ -1,0 +1,75 @@
+name: MusicTrainer
+prefix: $HOME/envs/MusicTrainer
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - pip
+
+  # Scientific / plotting
+  - matplotlib=3.5.*
+  - pandas=1.3.*
+  - numpy
+  - scipy
+  - pillow
+
+  # Audio / music
+  - librosa=0.10.*
+  - music21=7.3.*
+
+  # NLP / text
+  - nltk=3.8.*
+  - regex
+  - sacremoses
+  - jellyfish
+  - unidecode
+
+  # Utilities
+  - certifi
+  - chardet
+  - charset-normalizer
+  - click
+  - colorama
+  - cycler
+  - filelock
+  - fonttools
+  - fsspec
+  - idna
+  - importlib-metadata
+  - joblib
+  - jsonpickle
+  - kiwisolver
+  - more-itertools
+  - packaging
+  - pyparsing
+  - python-dateutil
+  - pytz
+  - pyyaml
+  - six
+  - tqdm
+  - typing-extensions
+  - urllib3
+  - webcolors
+  - zipp
+
+  # Pip-only packages
+  - pip:
+      # PyTorch + GPU
+      - torch==1.12.1+cu114 --extra-index-url https://download.pytorch.org/whl/cu114
+      - torchvision==0.13.1+cu114 --extra-index-url https://download.pytorch.org/whl/cu114
+      - torchaudio==0.12.1+cu114 --extra-index-url https://download.pytorch.org/whl/cu114
+
+      # NLP / HuggingFace
+      - tokenizers==0.12.1
+      - transformers==4.21.3
+      - datasets==2.4.0
+      - accelerate==0.12.0
+      - evaluate==0.2.2
+      - huggingface-hub==0.16.4
+
+      # Audio / music
+      - rarfile==4.1
+      - samplings==0.1.7
+      - mido==1.3.0
+      - pydub==0.25.1

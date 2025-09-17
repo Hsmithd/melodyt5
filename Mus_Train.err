@@ -1,0 +1,45 @@
+2025-09-17 12:16:41.714006: I tensorflow/stream_executor/platform/default/dso_loader.cc:49] Successfully opened dynamic library libcudart.so.10.1
+Traceback (most recent call last):
+  File "train.py", line 58, in <module>
+    model = MelodyT5(patch_config, char_config).to(device)
+  File "/data/groups/hedensan/hsmith/melodyt5/utils.py", line 224, in __init__
+    self.patch_level_decoder = PatchLevelEnDecoder(encoder_config)
+  File "/data/groups/hedensan/hsmith/melodyt5/utils.py", line 96, in __init__
+    self.base = EncoderDecoderModel.from_encoder_decoder_pretrained("random_model", "random_model", tie_encoder_decoder=True)
+  File "/data/software/python-libs/3.0.0/lib/python3.8/site-packages/transformers/models/encoder_decoder/modeling_encoder_decoder.py", line 389, in from_encoder_decoder_pretrained
+    encoder = AutoModel.from_pretrained(encoder_pretrained_model_name_or_path, *model_args, **kwargs_encoder)
+  File "/data/software/python-libs/3.0.0/lib/python3.8/site-packages/transformers/models/auto/auto_factory.py", line 446, in from_pretrained
+    return model_class.from_pretrained(pretrained_model_name_or_path, *model_args, config=config, **kwargs)
+  File "/data/software/python-libs/3.0.0/lib/python3.8/site-packages/transformers/modeling_utils.py", line 1979, in from_pretrained
+    raise EnvironmentError(
+OSError: Error no file named pytorch_model.bin, tf_model.h5, model.ckpt.index or flax_model.msgpack found in directory random_model.
+ERROR:torch.distributed.elastic.multiprocessing.api:failed (exitcode: 1) local_rank: 0 (pid: 60916) of binary: /data/software/python-libs/3.0.0/bin/python
+Traceback (most recent call last):
+  File "/data/software/python-libs/3.0.0/bin/torchrun", line 33, in <module>
+    sys.exit(load_entry_point('torch==1.12.1', 'console_scripts', 'torchrun')())
+  File "/data/software/python-libs/3.0.0/lib/python3.8/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 345, in wrapper
+    return f(*args, **kwargs)
+  File "/data/software/python-libs/3.0.0/lib/python3.8/site-packages/torch/distributed/run.py", line 761, in main
+    run(args)
+  File "/data/software/python-libs/3.0.0/lib/python3.8/site-packages/torch/distributed/run.py", line 752, in run
+    elastic_launch(
+  File "/data/software/python-libs/3.0.0/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 131, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/data/software/python-libs/3.0.0/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 245, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+train.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2025-09-17_12:16:45
+  host      : gpu01.head.bose.hpc.cluster
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 60916)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

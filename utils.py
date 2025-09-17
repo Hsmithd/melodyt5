@@ -93,7 +93,13 @@ class PatchLevelEnDecoder(PreTrainedModel):
         torch.nn.init.normal_(self.patch_embedding.weight, std=0.02)
         if SHARE_WEIGHTS:
             try:
-                self.base = EncoderDecoderModel.from_encoder_decoder_pretrained("random_model", "random_model", tie_encoder_decoder=True)
+                from transformers import EncoderDecoderModel, T5Config
+
+                # T5-small configs for melody generation
+                encoder_config = T5Config.from_pretrained("t5-base")
+                decoder_config = T5Config.from_pretrained("t5-base")
+
+                self.base = EncoderDecoderModel.from_encoder_decoder_configs(encoder_config, decoder_config)
             except Exception as e:
                 print("Error loading 'random_model':", e)
                 print("Please run 'random_model.py' to create randomly initialized weights.")
