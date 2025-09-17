@@ -81,6 +81,7 @@ class Patchilizer:
         """
         return ''.join(self.patch2bar(patch) for patch in patches)
 
+
 class PatchLevelEnDecoder(PreTrainedModel):
     """
     An Patch-level Decoder model for generating patch features in an auto-regressive manner. 
@@ -93,13 +94,18 @@ class PatchLevelEnDecoder(PreTrainedModel):
         torch.nn.init.normal_(self.patch_embedding.weight, std=0.02)
         if SHARE_WEIGHTS:
             try:
-                from transformers import EncoderDecoderModel, T5Config
+                # Try the newer method name first
+                try:
+                    self.base = EncoderDecoderModel.from_encoder_decoder_pretrained(
+                        "random_model", "random_model", tie_encoder_decoder=True
+                    )
+                except AttributeError:
+                    # Fallback to older method if the newer one doesn't exist
+                    from transformers import AutoModel
+                    encoder = AutoModel.from_pretrained("random_model")
+                    decoder = AutoModel.from_pretrained("random_model")
+                    self.base = EncoderDecoderModel(encoder=encoder, decoder=decoder)
 
-                # T5-small configs for melody generation
-                encoder_config = T5Config.from_pretrained("t5-base")
-                decoder_config = T5Config.from_pretrained("t5-base")
-
-                self.base = EncoderDecoderModel.from_encoder_decoder_configs(encoder_config, decoder_config)
             except Exception as e:
                 print("Error loading 'random_model':", e)
                 print("Please run 'random_model.py' to create randomly initialized weights.")
@@ -111,6 +117,7 @@ class PatchLevelEnDecoder(PreTrainedModel):
 
         self.base.config.pad_token_id = 0
         self.base.config.decoder_start_token_id = 1
+
 
     def forward(self,
                 patches: torch.Tensor,
