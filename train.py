@@ -63,17 +63,18 @@ if world_size > 1:
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
 
+
 # -------------------------
-# Dataset / DataLoader
+# Dataset / DataLoader - FIXED
 # -------------------------
 def collate_batch(batch):
     input_patches, input_masks, output_patches, output_masks = [], [], [], []
 
     for input_patch, output_patch in batch:
         input_patches.append(input_patch)
-        input_masks.append(torch.tensor([1]*input_patch.shape[0]))
+        input_masks.append(torch.tensor([1] * input_patch.shape[0]))
         output_patches.append(output_patch)
-        output_masks.append(torch.tensor([1]*output_patch.shape[0]))
+        output_masks.append(torch.tensor([1] * output_patch.shape[0]))
 
     input_patches = torch.nn.utils.rnn.pad_sequence(input_patches, batch_first=True, padding_value=0)
     input_masks = torch.nn.utils.rnn.pad_sequence(input_masks, batch_first=True, padding_value=0)
@@ -81,6 +82,7 @@ def collate_batch(batch):
     output_masks = torch.nn.utils.rnn.pad_sequence(output_masks, batch_first=True, padding_value=0)
 
     return input_patches.to(device), input_masks.to(device), output_patches.to(device), output_masks.to(device)
+
 
 class MelodyHubDataset(Dataset):
     def __init__(self, items):
@@ -99,11 +101,36 @@ class MelodyHubDataset(Dataset):
     def __getitem__(self, idx):
         return self.inputs[idx], self.outputs[idx]
 
+
 # -------------------------
-# Training / Evaluation
+# Training / Evaluation - FIXED
 # -------------------------
 def process_one_batch(batch):
-    input_patches, input_masks, output_patches, output_masks = batch
+    # Debug: print batch structure to understand what's being passed
+    if isinstance(batch, (list, tuple)):
+        print(f"Batch is a {type(batch)} with {len(batch)} elements")
+        for i, item in enumerate(batch):
+            if hasattr(item, 'shape'):
+                print(f"  Element {i}: shape {item.shape}")
+            else:
+                print(f"  Element {i}: type {type(item)}")
+    else:
+        print(f"Batch is type {type(batch)}")
+        if hasattr(batch, 'shape'):
+            print(f"Batch shape: {batch.shape}")
+
+    # Try to unpack the batch
+    try:
+        input_patches, input_masks, output_patches, output_masks = batch
+        print("Successfully unpacked batch into 4 tensors")
+    except ValueError as e:
+        print(f"Error unpacking batch: {e}")
+        # If unpacking fails, investigate what we actually have
+        if isinstance(batch, (list, tuple)) and len(batch) == 4:
+            input_patches, input_masks, output_patches, output_masks = batch[0], batch[1], batch[2], batch[3]
+        else:
+            raise e
+
     loss = model(input_patches, input_masks, output_patches, output_masks)
     if world_size > 1:
         loss = loss.unsqueeze(0)
@@ -112,8 +139,9 @@ def process_one_batch(batch):
         dist.broadcast(loss, src=0)
     return loss
 
+
 def train_epoch():
-    tqdm_train_set = tqdm(train_set)
+    tqdm_train_set = tqdm(train_loader)  # Use train_loader instead of train_set
     total_train_loss, iter_idx = 0, 1
     model.train()
     for batch in tqdm_train_set:
@@ -125,12 +153,13 @@ def train_epoch():
         lr_scheduler.step()
         model.zero_grad(set_to_none=True)
         total_train_loss += loss.item()
-        tqdm_train_set.set_postfix({str(global_rank)+'_train_loss': total_train_loss/iter_idx})
+        tqdm_train_set.set_postfix({str(global_rank) + '_train_loss': total_train_loss / iter_idx})
         iter_idx += 1
-    return total_train_loss/(iter_idx-1)
+    return total_train_loss / (iter_idx - 1)
+
 
 def eval_epoch():
-    tqdm_eval_set = tqdm(eval_set)
+    tqdm_eval_set = tqdm(eval_loader)  # Use eval_loader instead of eval_set
     total_eval_loss, iter_idx = 0, 1
     model.eval()
     for batch in tqdm_eval_set:
@@ -139,9 +168,10 @@ def eval_epoch():
         if loss is None or torch.isnan(loss).item():
             continue
         total_eval_loss += loss.item()
-        tqdm_eval_set.set_postfix({str(global_rank)+'_eval_loss': total_eval_loss/iter_idx})
+        tqdm_eval_set.set_postfix({str(global_rank) + '_eval_loss': total_eval_loss / iter_idx})
         iter_idx += 1
-    return total_eval_loss/(iter_idx-1)
+    return total_eval_loss / (iter_idx - 1)
+
 
 # -------------------------
 # Main
@@ -155,17 +185,21 @@ if __name__ == "__main__":
         for line in f: eval_items.append(json.loads(line.strip()))
 
     # Trim to batch multiples
-    train_items = train_items[:(len(train_items)//batch_size)*batch_size]
-    eval_items = eval_items[:(len(eval_items)//batch_size)*batch_size]
+    train_items = train_items[:(len(train_items) // batch_size) * batch_size]
+    eval_items = eval_items[:(len(eval_items) // batch_size) * batch_size]
 
-    train_set = MelodyHubDataset(train_items)
-    eval_set = MelodyHubDataset(eval_items)
+    train_dataset = MelodyHubDataset(train_items)
+    eval_dataset = MelodyHubDataset(eval_items)
 
-    train_sampler = DistributedSampler(train_set, num_replicas=world_size, rank=local_rank) if world_size > 1 else None
-    eval_sampler = DistributedSampler(eval_set, num_replicas=world_size, rank=local_rank) if world_size > 1 else None
+    train_sampler = DistributedSampler(train_dataset, num_replicas=world_size,
+                                       rank=local_rank) if world_size > 1 else None
+    eval_sampler = DistributedSampler(eval_dataset, num_replicas=world_size,
+                                      rank=local_rank) if world_size > 1 else None
 
-    train_loader = DataLoader(train_set, batch_size=batch_size, collate_fn=collate_batch, sampler=train_sampler, shuffle=(train_sampler is None))
-    eval_loader = DataLoader(eval_set, batch_size=batch_size, collate_fn=collate_batch, sampler=eval_sampler, shuffle=(eval_sampler is None))
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, collate_fn=collate_batch, sampler=train_sampler,
+                              shuffle=(train_sampler is None))
+    eval_loader = DataLoader(eval_dataset, batch_size=batch_size, collate_fn=collate_batch, sampler=eval_sampler,
+                             shuffle=(eval_sampler is None))
 
     lr_scheduler = get_constant_schedule_with_warmup(optimizer=optimizer, num_warmup_steps=1000)
 
@@ -201,16 +235,16 @@ if __name__ == "__main__":
         print(f"Loaded checkpoint from epoch {pre_epoch}")
 
     # Training loop
-    for epoch in range(pre_epoch+1, NUM_EPOCHS+1):
+    for epoch in range(pre_epoch + 1, NUM_EPOCHS + 1):
         if train_sampler: train_sampler.set_epoch(epoch)
         if eval_sampler: eval_sampler.set_epoch(epoch)
-        print('-'*21 + f" Epoch {epoch} " + '-'*21)
+        print('-' * 21 + f" Epoch {epoch} " + '-' * 21)
 
         train_loss = train_epoch()
         eval_loss = eval_epoch()
 
         if global_rank == 0:
-            with open(LOGS_PATH,'a') as f:
+            with open(LOGS_PATH, 'a') as f:
                 f.write(f"Epoch {epoch}\ntrain_loss: {train_loss}\neval_loss: {eval_loss}\ntime: {time.asctime()}\n\n")
             if eval_loss < min_eval_loss:
                 best_epoch = epoch
